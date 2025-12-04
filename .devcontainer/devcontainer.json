@@ -1,10 +1,9 @@
 {
-	"name": "Go & Node.js with Playwright",
-	"build": {
-		"dockerfile": "Dockerfile"
-	},
+	"name": "Playwright (Go + Node)",
+	// 不再使用 build 和 Dockerfile，而是直接指定一个预构建好的镜像！
+	"image": "mcr.microsoft.com/playwright:v1.44.0-jammy",
 
-	// 端口转发: 把容器内的端口映射出来
+	// 端口转发: 保持不变
 	"forwardPorts": [8080, 5173],
 	"portsAttributes": {
 		"8080": {
@@ -17,10 +16,11 @@
 		}
 	},
 
-	// Post-Create Command: 容器第一次创建成功后自动执行的命令
+	// 在容器创建后，我们再来安装 Go 和项目依赖
+	// 这比在 build 阶段做要快得多！
 	"postCreateCommand": "bash ./.devcontainer/post-create.sh",
 
-	// VS Code 扩展: 推荐在这个环境里安装的插件
+	// VS Code 扩展: 保持不变
 	"customizations": {
 		"vscode": {
 			"extensions": [
@@ -32,6 +32,6 @@
 		}
 	},
 
-	// 使用非 root 用户运行
-	"remoteUser": "vscode"
+	// 官方 Playwright 镜像是用 pwuser 用户，我们继续用它
+	"remoteUser": "pwuser"
 }
