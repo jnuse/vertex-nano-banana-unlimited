@@ -18,8 +18,9 @@ interface AppState {
   currentPrompt: string;
   temperature: number;
   resolution: string;
+  aspectRatio: string;
   scenarioCount: number;
-
+ 
   // History and variants
   selectedGenerationId: string | null;
   showHistory: boolean;
@@ -28,7 +29,6 @@ interface AppState {
   showPromptPanel: boolean;
 
   // Actions
-  setCurrentProject: (project: Project | null) => void;
   setCurrentImage: (url: string | null) => void;
   setAllImages: (urls: string[]) => void;
 
@@ -39,9 +39,10 @@ interface AppState {
   setCurrentPrompt: (prompt: string) => void;
   setTemperature: (temp: number) => void;
   setResolution: (res: string) => void;
+  setAspectRatio: (ratio: string) => void;
   setScenarioCount: (count: number) => void;
   setIsGenerating: (generating: boolean) => void;
-
+ 
   selectGeneration: (id: string | null) => void;
   setShowHistory: (show: boolean) => void;
   setShowPromptPanel: (show: boolean) => void;
@@ -62,6 +63,7 @@ export const useAppStore = create<AppState>()(
       currentPrompt: '',
       temperature: 1.0,
       resolution: '4K',
+      aspectRatio: '1:1',
       scenarioCount: 1,
       selectedGenerationId: null,
       showHistory: true,
@@ -83,9 +85,10 @@ export const useAppStore = create<AppState>()(
       setCurrentPrompt: (prompt) => set({ currentPrompt: prompt }),
       setTemperature: (temp) => set({ temperature: temp }),
       setResolution: (res) => set({ resolution: res }),
+      setAspectRatio: (ratio) => set({ aspectRatio: ratio }),
       setScenarioCount: (count) => set({ scenarioCount: count }),
       setIsGenerating: (generating) => set({ isGenerating: generating }),
-
+   
       selectGeneration: (id) => set({ selectedGenerationId: id }),
       setShowHistory: (show) => set({ showHistory: show }),
       setShowPromptPanel: (show) => set({ showPromptPanel: show }),
@@ -94,7 +97,7 @@ export const useAppStore = create<AppState>()(
         if (!state.currentProject) {
           const newProject: Project = {
             id: Date.now().toString(),
-            name: 'New Project',
+            title: 'New Project',
             generations: [generation],
             edits: [],
             createdAt: Date.now(),

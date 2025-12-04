@@ -16,6 +16,8 @@ export const PromptComposer: React.FC = () => {
     setTemperature,
     resolution,
     setResolution,
+    aspectRatio,
+    setAspectRatio,
     scenarioCount,
     setScenarioCount,
     isGenerating,
@@ -60,13 +62,10 @@ export const PromptComposer: React.FC = () => {
     }
 
     generate({
-      prompt: currentPrompt,
-      referenceImages,  // ✅ 使用正确的字段名和数据格式
-      temperature,
-      resolution,
-      scenarioCount,
+    	prompt: currentPrompt,
+    	referenceImages,  // ✅ 使用正确的字段名和数据格式
     });
-  };
+   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -91,6 +90,7 @@ export const PromptComposer: React.FC = () => {
     setCurrentPrompt('');
     setTemperature(1.0);
     setResolution('4K');
+    setAspectRatio('1:1');
     setScenarioCount(1);
     clearUploadedImages();
     setCurrentImage(null);
@@ -261,10 +261,32 @@ export const PromptComposer: React.FC = () => {
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Scenario Count */}
-          <div>
+           </div>
+      
+           {/* Aspect Ratio */}
+           <div>
+            <label className="text-xs text-gray-400 block mb-1">宽高比</label>
+            <div className="grid grid-cols-3 gap-2">
+            	{['1:1', '3:2', '2:3', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9'].map((ratio) => (
+            		<button
+            			key={ratio}
+            			onClick={() => setAspectRatio(ratio)}
+            			className={cn(
+            				'px-3 py-1 rounded text-xs transition-colors',
+            				aspectRatio === ratio
+            					? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50'
+            					: 'bg-gray-900 text-gray-400 border border-gray-700 hover:bg-gray-800'
+            			)}
+            			disabled={isGenerating}
+            		>
+            			{ratio}
+            		</button>
+            	))}
+            </div>
+           </div>
+      
+           {/* Scenario Count */}
+           <div>
             <label className="text-xs text-gray-400 block mb-1">
               并发场景: {scenarioCount}
             </label>

@@ -203,6 +203,7 @@ func handleJSONRun(w http.ResponseWriter, r *http.Request) {
 		ScenarioCount int     `json:"scenarioCount"`
 		Resolution    string  `json:"resolution"`
 		Temperature   float64 `json:"temperature"`
+		AspectRatio   string  `json:"aspectRatio"`
 	}
 	if err := json.Unmarshal(body, &req); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": fmt.Sprintf("invalid json: %v", err)})
@@ -253,8 +254,11 @@ func handleJSONRun(w http.ResponseWriter, r *http.Request) {
 	if req.Temperature > 0 {
 		opts.Temperature = req.Temperature
 	}
+	if req.AspectRatio != "" {
+		opts.AspectRatio = req.AspectRatio
+	}
 
-	fmt.Printf("▶️ /run (json) image=%s processed=%s scenario=%d res=%s temp=%.1f promptLen=%d\n", req.Image, processedPath, opts.ScenarioCount, opts.OutputRes, opts.Temperature, len(opts.PromptText))
+	fmt.Printf("▶️ /run (json) image=%s processed=%s scenario=%d res=%s aspect=%s temp=%.1f promptLen=%d\n", req.Image, processedPath, opts.ScenarioCount, opts.OutputRes, opts.AspectRatio, opts.Temperature, len(opts.PromptText))
 	results, runErr := runWithExclusive(r.Context(), opts)
 	if runErr != nil {
 		status := http.StatusInternalServerError
@@ -294,6 +298,7 @@ func handleMultipartRun(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	resolution := strings.TrimSpace(r.FormValue("resolution"))
+	aspectRatio := strings.TrimSpace(r.FormValue("aspectRatio"))
 	temperature := 0.0
 	if tempStr := strings.TrimSpace(r.FormValue("temperature")); tempStr != "" {
 		if t, err := strconv.ParseFloat(tempStr, 64); err == nil && t >= 0 && t <= 2 {
@@ -354,6 +359,9 @@ func handleMultipartRun(w http.ResponseWriter, r *http.Request) {
 	if resolution != "" {
 		opts.OutputRes = resolution
 	}
+	if aspectRatio != "" {
+		opts.AspectRatio = aspectRatio
+	}
 	// 设置温度，如果前端没有传递则使用默认值
 	if temperature > 0 {
 		opts.Temperature = temperature
@@ -363,7 +371,7 @@ func handleMultipartRun(w http.ResponseWriter, r *http.Request) {
 	if header != nil {
 		filename = header.Filename
 	}
-	fmt.Printf("▶️ /run (multipart) file=%s processed=%s scenario=%d res=%s temp=%.1f promptLen=%d\n", filename, finalProcessPath, opts.ScenarioCount, opts.OutputRes, opts.Temperature, len(opts.PromptText))
+	fmt.Printf("▶️ /run (multipart) file=%s processed=%s scenario=%d res=%s aspect=%s temp=%.1f promptLen=%d\n", filename, finalProcessPath, opts.ScenarioCount, opts.OutputRes, opts.AspectRatio, opts.Temperature, len(opts.PromptText))
 	results, runErr := runWithExclusive(r.Context(), opts)
 	if runErr != nil {
 		status := http.StatusInternalServerError

@@ -65,6 +65,41 @@ func SetOutputResolution(page playwright.Page, target string) (bool, error) {
 	return strings.Contains(strings.ToLower(val), strings.ToLower(target)), nil
 }
 
+// SetAspectRatio chooses an aspect ratio option in the combobox.
+func SetAspectRatio(page playwright.Page, target string) (bool, error) {
+	combo := page.GetByRole("combobox", playwright.PageGetByRoleOptions{
+		Name: regexp.MustCompile("(?i)aspect ratio|宽高比"),
+	})
+
+	vis, _ := combo.IsVisible()
+	if !vis {
+		return false, nil
+	}
+	_ = combo.ScrollIntoViewIfNeeded()
+	if err := combo.Click(playwright.LocatorClickOptions{Force: playwright.Bool(true)}); err != nil {
+		return false, err
+	}
+	time.Sleep(300 * time.Millisecond)
+
+	option := page.GetByRole("option", playwright.PageGetByRoleOptions{
+		Name: regexp.MustCompile(fmt.Sprintf("(?i)^\\s*%s\\s*$", target)),
+	}).Or(page.Locator("mat-option", playwright.PageLocatorOptions{
+		HasText: target,
+	})).Or(page.GetByText(target))
+
+	optVisible, _ := option.First().IsVisible()
+	if !optVisible {
+		return false, nil
+	}
+	time.Sleep(300 * time.Millisecond)
+	if err := option.First().Click(playwright.LocatorClickOptions{Force: playwright.Bool(true)}); err != nil {
+		return false, err
+	}
+	page.WaitForTimeout(300)
+	val, _ := combo.InnerText()
+	return strings.Contains(strings.ToLower(val), strings.ToLower(target)), nil
+}
+
 // SetTemperature sets the temperature value using the slider. If temperature is 0, skip setting.
 func SetTemperature(page playwright.Page, temperature float64) (bool, error) {
 	// Skip if temperature is 0 or invalid

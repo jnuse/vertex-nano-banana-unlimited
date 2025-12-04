@@ -13,10 +13,11 @@ export interface GenerationRequest {
   referenceImages?: string[];
   temperature?: number;
   resolution?: '1K' | '2K' | '4K';
+  aspectRatio?: string;
   scenarioCount?: number;
-}
-
-export interface EditRequest {
+ }
+ 
+ export interface EditRequest {
   instruction: string;
   originalImage?: string;
   referenceImages?: string[];
@@ -71,9 +72,12 @@ export class GeminiServiceAdapter {
       return new File([bytes], filename, { type: mimeType });
     } catch (error) {
       console.error('Error converting base64 to file:', error);
-      throw new Error(`Failed to convert base64 to file: ${error.message}`);
+      if (error instanceof Error) {
+      	throw new Error(`Failed to convert base64 to file: ${error.message}`);
+      }
+      throw new Error('Failed to convert base64 to file: An unknown error occurred');
+     }
     }
-  }
 
   // 将前端GenerationRequest转换为Go后端请求格式
   private convertToGoBackendRequest(request: GenerationRequest): GoBackendRunRequest {
@@ -81,9 +85,10 @@ export class GeminiServiceAdapter {
       prompt: request.prompt,
       scenarioCount: request.scenarioCount || 1,
       resolution: request.resolution || '4K',
-    };
-
-    // 如果有参考图片，使用第一张作为主要图片
+      aspectRatio: request.aspectRatio || '1:1',
+     };
+   
+     // 如果有参考图片，使用第一张作为主要图片
     if (request.referenceImages && request.referenceImages.length > 0) {
       const imageFile = this.base64ToFile(request.referenceImages[0], 'reference.png');
       goRequest.image = imageFile;
@@ -168,20 +173,22 @@ export class GeminiServiceAdapter {
       console.log('🎯 转换后的图片URL数量:', images.length);
       return images;
     } catch (error) {
-      console.error('Go后端生成失败:', error);
-
-      // 处理Go后端特有的错误
-      if (error.message.includes('quota')) {
-        throw new Error('API配额已用完，请稍后重试或更换代理');
-      } else if (error.message.includes('timeout')) {
-        throw new Error('请求超时，请重试');
-      } else if (error.message.includes('network')) {
-        throw new Error('网络连接失败，请检查后端服务');
-      }
-
-      throw error;
+    	console.error('Go后端生成失败:', error);
+  
+    	if (error instanceof Error) {
+    		// 处理Go后端特有的错误
+    		if (error.message.includes('quota')) {
+    			throw new Error('API配额已用完，请稍后重试或更换代理');
+    		} else if (error.message.includes('timeout')) {
+    			throw new Error('请求超时，请重试');
+    		} else if (error.message.includes('network')) {
+    			throw new Error('网络连接失败，请检查后端服务');
+    		}
+    	}
+  
+    	throw error;
     }
-  }
+   }
 
   // 并发生成多个场景
   async generateConcurrentImages(request: GenerationRequest): Promise<Array<{scenarioId: number, images: string[], error?: string}>> {

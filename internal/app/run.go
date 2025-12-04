@@ -26,17 +26,19 @@ type RunOptions struct {
 	StepPause     time.Duration
 	SubStepPause  time.Duration
 	OutputRes     string
+	AspectRatio   string
 	Temperature   float64
 }
 
 type ScenarioResult struct {
-	ID        int                   `json:"id"`
-	Outcome   steps.DownloadOutcome `json:"outcome"`
-	Path      string                `json:"path"`
-	URL       string                `json:"url"`
-	ProxyTag  string                `json:"proxyTag,omitempty"`
-	OutputRes string                `json:"outputRes,omitempty"`
-	Error     string                `json:"error,omitempty"`
+	ID          int                   `json:"id"`
+	Outcome     steps.DownloadOutcome `json:"outcome"`
+	Path        string                `json:"path"`
+	URL         string                `json:"url"`
+	ProxyTag    string                `json:"proxyTag,omitempty"`
+	OutputRes   string                `json:"outputRes,omitempty"`
+	AspectRatio string                `json:"aspectRatio,omitempty"`
+	Error       string                `json:"error,omitempty"`
 }
 
 func DefaultRunOptions() RunOptions {
@@ -49,6 +51,7 @@ func DefaultRunOptions() RunOptions {
 
 	scenarioCount := 1
 	outputRes := "4K"
+	aspectRatio := "1:1"
 
 	stepPause := time.Second
 
@@ -65,6 +68,7 @@ func DefaultRunOptions() RunOptions {
 		StepPause:     stepPause,
 		SubStepPause:  subStepPause,
 		OutputRes:     outputRes,
+		AspectRatio:   aspectRatio,
 		Temperature:   temperature,
 	}
 }
@@ -96,6 +100,9 @@ func RunWithOptions(ctx context.Context, opts RunOptions) ([]ScenarioResult, err
 	}
 	if opts.OutputRes == "" {
 		opts.OutputRes = "4K"
+	}
+	if opts.AspectRatio == "" {
+		opts.AspectRatio = "1:1"
 	}
 
 	if err := os.MkdirAll(opts.DownloadDir, 0o755); err != nil {
@@ -215,7 +222,7 @@ func pickProxyEndpoints(ctx context.Context) []proxy.Endpoint {
 }
 
 func runScenario(ctx context.Context, browser playwright.Browser, viewport playwright.Size, engineName, proxyURL, proxyTag string, id int, opts RunOptions, batchFolder string) (ScenarioResult, error) {
-	res := ScenarioResult{ID: id, Outcome: steps.DownloadOutcomeNone, ProxyTag: proxyTag, OutputRes: opts.OutputRes}
+	res := ScenarioResult{ID: id, Outcome: steps.DownloadOutcomeNone, ProxyTag: proxyTag, OutputRes: opts.OutputRes, AspectRatio: opts.AspectRatio}
 	if err := ctx.Err(); err != nil {
 		return res, err
 	}
@@ -348,6 +355,12 @@ func runScenario(ctx context.Context, browser playwright.Browser, viewport playw
 		return steps.SetOutputResolution(page, opts.OutputRes)
 	}); err != nil {
 		return fail("set output resolution", err)
+	}
+
+	if err := step(fmt.Sprintf("Set aspect ratio to %s", opts.AspectRatio), opts.StepPause, func() (bool, error) {
+		return steps.SetAspectRatio(page, opts.AspectRatio)
+	}); err != nil {
+		return fail("set aspect ratio", err)
 	}
 
 	if opts.Temperature > 0 {

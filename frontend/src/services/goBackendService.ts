@@ -7,9 +7,10 @@ export interface GoBackendRunRequest {
   image?: File | string;  // File对象（multipart请求）或本地图片路径（JSON请求）
   scenarioCount?: number;
   resolution?: string;
-}
-
-export interface GoBackendRunResponse {
+  aspectRatio?: string;
+ }
+ 
+ export interface GoBackendRunResponse {
   status: string;
   imageUsed?: string;
   imageOrig?: string;
@@ -25,10 +26,11 @@ export interface GoBackendScenarioResult {
   url: string;
   proxyTag?: string;
   outputRes?: string;
+  aspectRatio?: string;
   error?: string;
-}
-
-export interface GoBackendGalleryResponse {
+ }
+ 
+ export interface GoBackendGalleryResponse {
   dir: string;
   count: number;
   folders: GoBackendGalleryGroup[];
@@ -57,6 +59,7 @@ export interface GoBackendCancelResponse {
 }
 
 export interface ProxySubscriptionsResponse {
+  envSubscriptions: string[];
   storedSubscriptions: string[];
   effective: string[];
   subscriptions?: string[]; // fallback key
@@ -136,9 +139,13 @@ export class GoBackendService {
       }
 
       if (request.resolution) {
-        formData.append('resolution', request.resolution);
+      	formData.append('resolution', request.resolution);
       }
-
+   
+      if (request.aspectRatio) {
+      	formData.append('aspectRatio', request.aspectRatio);
+      }
+   
       // 添加图片文件
       formData.append('image', request.image);
 
@@ -161,8 +168,9 @@ export class GoBackendService {
           prompt: request.prompt,
           scenarioCount: request.scenarioCount || 1,
           resolution: request.resolution || '4K',
-        }),
-      });
+          aspectRatio: request.aspectRatio || '1:1',
+         }),
+        });
 
       return this.handleRunResponse(response);
     }
@@ -176,11 +184,12 @@ export class GoBackendService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          prompt: request.prompt,
-          scenarioCount: request.scenarioCount || 1,
-          resolution: request.resolution || '4K',
+        	prompt: request.prompt,
+        	scenarioCount: request.scenarioCount || 1,
+        	resolution: request.resolution || '4K',
+        	aspectRatio: request.aspectRatio || '1:1',
         }),
-      });
+       });
 
       return this.handleRunResponse(response);
     }
