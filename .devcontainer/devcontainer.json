@@ -29,8 +29,5 @@
 				"ms-vscode-remote.remote-containers"
 			]
 		}
-	},
-
-	// 官方 Playwright 镜像是用 pwuser 用户，我们继续用它
-	"remoteUser": "pwuser"
+	}
 }
