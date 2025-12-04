@@ -10,7 +10,7 @@ export const Header: React.FC = () => {
       <header className="h-16 bg-gray-950 border-b border-gray-800 flex items-center justify-between px-6">
         <div className="flex items-center space-x-4">
           <a
-            href="https://github.com/MonchiLin/vertex-nano-banana-unlimited"
+            href="#"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center space-x-2 group cursor-pointer"
@@ -18,7 +18,7 @@ export const Header: React.FC = () => {
           >
             <div className="text-2xl">🍌</div>
             <h1 className="text-xl font-semibold text-gray-100 group-hover:text-gray-200 transition-colors">
-              Vertex Nano Banana Unlimited
+              Nano Banana
             </h1>
             <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-gray-300 transition-colors" />
           </a>

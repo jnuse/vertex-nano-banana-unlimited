@@ -18,10 +18,13 @@ func main() {
 	fmt.Println("🧪 HTTP 测试服务已启动：POST /run 支持 multipart（image/prompt/scenarioCount）或 JSON（image/prompt/scenarioCount）。")
 	fmt.Println("🩺 健康检查：GET /healthz")
 
-	// 固定端口配置
-	addr := ":8080"
+	// 从环境变量加载配置，如果未设置则使用默认值
+	addr := os.Getenv("BACKEND_ADDR")
+	if addr == "" {
+		addr = ":8080"
+	}
 
-	fmt.Printf("🌐 服务器启动在端口 8080 (支持CORS跨域请求)\n")
+	fmt.Printf("🌐 服务器启动在 %s (支持CORS跨域请求)\n", addr)
 	if err := app.StartHTTPServer(context.Background(), addr); err != nil {
 		log.Fatalf("❌ HTTP 服务异常: %v", err)
 	}
