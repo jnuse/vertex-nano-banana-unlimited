@@ -1,13 +1,13 @@
 # Use the official Playwright image which has browser dependencies pre-installed
-FROM mcr.microsoft.com/playwright/go:v1.44.0-jammy
+FROM mcr.microsoft.com/playwright:v1.44.0-jammy
 
 # Set the working directory
 WORKDIR /app
 
 # --- Install Go and Node.js ---
-# Install Go
+# The base image has Node.js, but we need to install Go.
 RUN apt-get update && apt-get install -y golang-go && \
-# Install Node.js 20.x
+# Install Node.js dependencies (curl, etc., might be needed)
     apt-get install -y ca-certificates curl gnupg && \
     mkdir -p /etc/apt/keyrings && \
     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
