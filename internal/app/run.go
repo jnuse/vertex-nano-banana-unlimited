@@ -60,7 +60,7 @@ func DefaultRunOptions() RunOptions {
 		ImagePath:     imagePath,
 		PromptText:    "",
 		DownloadDir:   downloadDir,
-		Headless:      false,
+		Headless:      true,
 		ScenarioCount: scenarioCount,
 		StepPause:     stepPause,
 		SubStepPause:  subStepPause,
@@ -265,7 +265,35 @@ func runScenario(ctx context.Context, browser playwright.Browser, viewport playw
 	if err != nil {
 		return fail("new context", fmt.Errorf("new context: %w", err))
 	}
-	defer browserCtx.Close()
+
+	traceDir := filepath.Join(opts.DownloadDir, "traces")
+	if err := os.MkdirAll(traceDir, 0o755); err != nil {
+		return fail("create trace dir", fmt.Errorf("create trace dir: %w", err))
+	}
+
+	// Start tracing
+	if err := browserCtx.Tracing().Start(playwright.TracingStartOptions{
+		Name:        playwright.String(fmt.Sprintf("trace_%d.zip", id)),
+		Screenshots: playwright.Bool(true),
+		Snapshots:   playwright.Bool(true),
+		Sources:     playwright.Bool(true),
+	}); err != nil {
+		return fail("start tracing", fmt.Errorf("start tracing: %w", err))
+	}
+
+	defer func() {
+		// Stop tracing and save the trace file.
+		traceFilePath := filepath.Join(traceDir, fmt.Sprintf("trace_%d.zip", id))
+		if err := browserCtx.Tracing().Stop(traceFilePath); err != nil {
+			fmt.Printf("⚠️ [%d] failed to stop tracing: %v\n", id, err)
+		} else {
+			fmt.Printf("ℹ️ [%d] 追踪文件已保存到: %s\n", id, traceFilePath)
+		}
+
+		if err := browserCtx.Close(); err != nil {
+			fmt.Printf("⚠️ [%d] failed to close context: %v\n", id, err)
+		}
+	}()
 
 	page, err := browserCtx.NewPage()
 	if err != nil {

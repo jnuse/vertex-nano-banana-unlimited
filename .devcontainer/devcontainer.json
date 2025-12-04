@@ -26,7 +26,8 @@
 				"dbaeumer.vscode-eslint",
 				"esbenp.prettier-vscode",
 				"ms-playwright.playwright",
-				"ms-vscode-remote.remote-containers"
+				"ms-vscode-remote.remote-containers",
+				"rooveterinaryinc.roo-cline"
 			]
 		}
 	}
