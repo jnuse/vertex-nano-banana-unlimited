@@ -11,18 +11,23 @@ import (
 
 // OpenModelSettings opens the model settings panel by clicking the header.
 func OpenModelSettings(page playwright.Page) (bool, error) {
-	header := page.GetByRole("button", playwright.PageGetByRoleOptions{
-		Name: regexp.MustCompile("(?i)model settings|模型设置"),
-	}).Or(page.Locator("ai-llm-collapsible-model-settings .collapsible-panel__title", playwright.PageLocatorOptions{
-		HasText: "模型设置",
-	})).First()
+	// 最终方案：结合正确的定位器和最简单的“发射后不管”策略。
 
-	vis, _ := header.IsVisible()
-	if !vis {
-		return false, nil
+	// 1. 正确的定位器：在“模型设置”面板中找到切换按钮。
+	panel := page.Locator(`ai-llm-collapsible-panel[heading*="模型设置"], ai-llm-collapsible-panel[heading*="Model settings"]`)
+	toggleButton := panel.Locator(".collapsible-panel__toggle-button")
+
+	// 2. 检查按钮是否可见。
+	vis, err := toggleButton.IsVisible()
+	if err != nil {
+		return false, fmt.Errorf("could not check visibility of toggle button: %w", err)
 	}
-	_ = header.ScrollIntoViewIfNeeded()
-	return true, header.Click(playwright.LocatorClickOptions{Force: playwright.Bool(true)})
+	if !vis {
+		return false, nil // Button not visible.
+	}
+
+	// 3. 直接点击，然后立即返回，不进行任何状态验证。
+	return true, toggleButton.Click(playwright.LocatorClickOptions{Force: playwright.Bool(true)})
 }
 
 // SetOutputResolution chooses a resolution option in the combobox.
