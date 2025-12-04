@@ -1,0 +1,37 @@
+{
+	"name": "Go & Node.js with Playwright",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+
+	// 端口转发: 把容器内的端口映射出来
+	"forwardPorts": [8080, 5173],
+	"portsAttributes": {
+		"8080": {
+			"label": "Backend (Go)",
+			"onAutoForward": "openBrowser"
+		},
+		"5173": {
+			"label": "Frontend (Vite/npm)",
+			"onAutoForward": "openBrowser"
+		}
+	},
+
+	// Post-Create Command: 容器第一次创建成功后自动执行的命令
+	"postCreateCommand": "bash ./.devcontainer/post-create.sh",
+
+	// VS Code 扩展: 推荐在这个环境里安装的插件
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"golang.go",
+				"dbaeumer.vscode-eslint",
+				"esbenp.prettier-vscode",
+				"ms-playwright.playwright"
+			]
+		}
+	},
+
+	// 使用非 root 用户运行
+	"remoteUser": "vscode"
+}
