@@ -4,11 +4,18 @@ FROM mcr.microsoft.com/playwright:v1.44.0-jammy
 # Set the working directory
 WORKDIR /app
 
-# --- Install Go ---
-# The base image already has Node.js. We only need to add Go.
+# --- Install Specific Go Version ---
+# The base image has Node.js. We need to install the exact Go version from go.mod.
+ENV GO_VERSION=1.22.0
 RUN apt-get update && \
-    apt-get install -y golang-go && \
+    apt-get install -y curl && \
+    curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" -o go.tar.gz && \
+    tar -C /usr/local -xzf go.tar.gz && \
+    rm go.tar.gz && \
+    apt-get purge -y --auto-remove curl && \
     rm -rf /var/lib/apt/lists/*
+
+ENV PATH="/usr/local/go/bin:${PATH}"
 
 # --- Setup Backend ---
 # Copy go module files and download dependencies to leverage Docker cache
