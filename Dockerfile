@@ -13,7 +13,7 @@ RUN apt-get update && \
 # --- Setup Backend ---
 # Copy go module files and download dependencies to leverage Docker cache
 COPY go.mod go.sum ./
-RUN go mod download && go mod tidy
+RUN go mod tidy && go mod download
 
 # --- Setup Frontend ---
 # Copy package files and install dependencies to leverage Docker cache
