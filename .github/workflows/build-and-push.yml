@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Build and Push Dev Image
 
 on:
   push:
@@ -7,14 +7,14 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch: # Allows manual triggering
+  workflow_dispatch:
 
 permissions:
   contents: read
   packages: write
 
 jobs:
-  build-and-push-image:
+  build-test-and-push:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,7 +27,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -35,40 +35,44 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ghcr.io/${{ github.repository }}-dev
 
-      - name: Build Docker image
-        id: build
+      - name: Build and load Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          load: true # Load the image into the local Docker daemon
-          tags: ghcr.io/${{ github.repository }}:test-build
+          load: true
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          push: false # Do not push yet
+          push: false
 
       - name: Run container and perform health check
         run: |
-          docker run -d --rm -p 8080:8080 --name test-container ghcr.io/${{ github.repository }}:test-build
-          echo "Waiting for container to start..."
-          sleep 10
-          echo "--- Performing Health Checks ---"
+          docker run -d --rm -p 8080:8080 -p 5173:5173 --name test-container ${{ steps.meta.outputs.tags }}
+          echo "Waiting for container to start services..."
+          sleep 15
           
-          echo "1. Pinging the root endpoint (serves frontend)..."
-          curl -f http://localhost:8080/ || (echo "❌ Frontend check failed!" && docker logs test-container && exit 1)
+          echo "--- Performing Health Checks ---"
+          echo "1. Pinging Go backend server (port 8080)..."
+          curl -f http://localhost:8080/gallery || (echo "❌ Backend check failed!" && docker logs test-container && exit 1)
+          echo "✅ Backend check passed!"
+          
+          echo "2. Pinging Vite dev server (port 5173)..."
+          curl -f http://localhost:5173/ || (echo "❌ Frontend check failed!" && docker logs test-container && exit 1)
           echo "✅ Frontend check passed!"
           
-          echo "2. Pinging the /gallery API endpoint (backend)..."
-          curl -f http://localhost:8080/gallery || (echo "❌ Backend API check failed!" && docker logs test-container && exit 1)
-          echo "✅ Backend API check passed!"
-
           echo "--- All health checks passed! ---"
           docker stop test-container
 
       - name: Push Docker image to registry
         if: github.event_name != 'pull_request'
-        run: |
-          docker tag ghcr.io/${{ github.repository }}:test-build ${{ steps.meta.outputs.tags }}
-          docker push ${{ steps.meta.outputs.tags }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
