@@ -1,7 +1,5 @@
 {
 	"name": "Playwright (Go + Node)",
-	// 不再使用 build 和 Dockerfile，而是直接指定一个预构建好的镜像！
-	"image": "mcr.microsoft.com/playwright:v1.44.0-jammy",
 
 	// 端口转发: 保持不变
 	"forwardPorts": [8080, 5173],
