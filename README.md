@@ -45,6 +45,8 @@ npm install
 
 # 启动开发服务器（端口 5173）
 npm run dev
+
+npm run build
 ```
 
 ### 3. 环境变量配置
