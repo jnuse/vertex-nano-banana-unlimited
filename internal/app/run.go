@@ -205,7 +205,11 @@ func proxyOptions(url string) *playwright.Proxy {
 }
 
 func pickProxyEndpoints(ctx context.Context) []proxy.Endpoint {
-	if endpoints, stop, err := proxy.StartSingBox(ctx); err == nil && len(endpoints) > 0 {
+	// 使用 context.Background() 启动 sing-box，使其生命周期与应用程序保持一致，
+	// 而不是与单个请求的 context 绑定。这可以防止因为请求结束或取消
+	// (例如在 page.Goto 期间) 导致 sing-box 进程被提前终止。
+	processCtx := context.Background()
+	if endpoints, stop, err := proxy.StartSingBox(processCtx); err == nil && len(endpoints) > 0 {
 		fmt.Printf("🧭 使用 sing-box 代理，节点数：%d\n", len(endpoints))
 		if stop != nil {
 			go func() {
@@ -316,7 +320,7 @@ func runScenario(ctx context.Context, browser playwright.Browser, viewport playw
 
 	_, err = page.Goto(opts.TargetURL, playwright.PageGotoOptions{
 		WaitUntil: playwright.WaitUntilStateDomcontentloaded,
-		Timeout:   playwright.Float(15_000),
+		Timeout:   playwright.Float(30_000),
 	})
 	if err != nil {
 		fmt.Printf("⚠️ [%d] goto error: %v\n", id, err)
@@ -405,7 +409,14 @@ func runScenario(ctx context.Context, browser playwright.Browser, viewport playw
 	}
 
 	outDir := filepath.Join(opts.DownloadDir, batchFolder)
-	outcome, path, err := steps.DownloadImage(ctx, page, outDir, 720*time.Second)
+
+	// 为图片下载步骤创建一个独立的超时上下文。
+	// 这可以防止在点击提交后，因后端长时间无响应而导致进程无限期卡住。
+	// 超时设置为 90 秒，从提交成功后开始计算。
+	downloadCtx, cancel := context.WithTimeout(ctx, 90*time.Second)
+	defer cancel()
+
+	outcome, path, err := steps.DownloadImage(downloadCtx, page, outDir, 720*time.Second)
 	res.Outcome = outcome
 	res.Path = path
 	if path != "" {
@@ -459,6 +470,7 @@ var (
 		"--window-size=1920,1080",
 		"--autoplay-policy=no-user-gesture-required",
 		"--disable-features=IsolateOrigins,site-per-process,AutomationControlled",
+		"--host-resolver-rules=\"MAP * ~NOTFOUND , EXCLUDE 127.0.0.1\"",
 		"--disable-blink-features=AutomationControlled",
 		"--no-sandbox",
 		"--disable-dev-shm-usage",

@@ -55,7 +55,8 @@ func corsMiddlewareForFunc(handler func(http.ResponseWriter, *http.Request)) htt
 
 func StartHTTPServer(ctx context.Context, addr string) error {
 	mux := http.NewServeMux()
-	mux.Handle("/", corsMiddleware(http.FileServer(http.Dir("."))))
+
+	// API 路由
 	mux.Handle("/healthz", corsMiddlewareForFunc(func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	}))
@@ -98,9 +99,45 @@ func StartHTTPServer(ctx context.Context, addr string) error {
 	}))
 	mux.Handle("/proxy/subscriptions", corsMiddlewareForFunc(handleProxySubscriptions))
 
+	// 静态文件服务 (SPA)
+	const staticDir = "./frontend/dist"
+	spaHandler := http.FileServer(http.Dir(staticDir))
+
+	// 临时文件服务
+	tmpFileServer := http.StripPrefix("/tmp/", http.FileServer(http.Dir("./tmp")))
+
+	// 根处理器，用于区分 API 和静态文件
+	rootHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// API 路由
+		if strings.HasPrefix(r.URL.Path, "/run") ||
+			strings.HasPrefix(r.URL.Path, "/gallery") ||
+			strings.HasPrefix(r.URL.Path, "/proxy") ||
+			strings.HasPrefix(r.URL.Path, "/cancel") ||
+			strings.HasPrefix(r.URL.Path, "/healthz") {
+			mux.ServeHTTP(w, r)
+			return
+		}
+
+		// 临时文件路由
+		if strings.HasPrefix(r.URL.Path, "/tmp/") {
+			tmpFileServer.ServeHTTP(w, r)
+			return
+		}
+
+		// 静态文件
+		filePath := filepath.Join(staticDir, r.URL.Path)
+		_, err := os.Stat(filePath)
+		if os.IsNotExist(err) {
+			// 文件不存在，返回 index.html
+			http.ServeFile(w, r, filepath.Join(staticDir, "index.html"))
+			return
+		}
+		spaHandler.ServeHTTP(w, r)
+	})
+
 	srv := &http.Server{
 		Addr:    addr,
-		Handler: corsMiddleware(mux),
+		Handler: rootHandler,
 	}
 
 	go func() {

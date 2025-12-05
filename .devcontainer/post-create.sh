@@ -5,7 +5,7 @@ echo "🚀 Starting post-create setup..."
 # 1. 安装 Go 依赖
 echo "📦 Installing Go dependencies..."
 go mod tidy
-npx playwright install-deps
+# npx playwright install-deps
 
 # 2. 安装 Playwright 浏览器
 # 注意: 我们用了你的 README 中指定的版本

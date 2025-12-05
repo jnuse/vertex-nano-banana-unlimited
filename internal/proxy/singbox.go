@@ -80,7 +80,11 @@ func StartSingBox(ctx context.Context) ([]Endpoint, func(), error) {
 
 	if len(endpoints) > 0 {
 		firstPort := extractPort(endpoints[0].URL)
-		_ = waitPortReady(ctx, "127.0.0.1", firstPort, 10*time.Second)
+		if waitPortReady(ctx, "127.0.0.1", firstPort, 15*time.Second) == nil {
+			// 等待端口就绪后，额外增加一个短暂的延时，确保 sing-box 内部服务完全初始化。
+			// 这有助于避免 "connection aborted" 或 "timeout" 的竞态条件。
+			time.Sleep(500 * time.Millisecond)
+		}
 	}
 
 	return filterPenalized(endpoints), stop, nil
@@ -283,7 +287,7 @@ func buildConfig(outbounds []map[string]any) (map[string]any, []Endpoint) {
 	}
 
 	cfg := map[string]any{
-		"log":       map[string]any{"level": "error"},
+		"log":       map[string]any{"level": "warn"},
 		"inbounds":  inbounds,
 		"outbounds": outWithDefaults,
 		"route": map[string]any{
